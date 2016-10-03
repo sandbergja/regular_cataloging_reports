@@ -117,6 +117,8 @@ SELECT DISTINCT b.id as tcn, ou.name as library, cn.label as call_number, c.barc
 
 
 ---every other month: report of items missing subject headings
+---this was getting overwhelming, so deliver a count and a small subset to work on instead
+/*
 SELECT DISTINCT b.id as tcn, ou.name as library, cn.label as call_number, c.barcode, xpath('//m:datafield[@tag="245"]/m:subfield[@code="a"]/text()', b.marc::xml, ARRAY[ARRAY['m','http://www.loc.gov/MARC21/slim']])::VARCHAR as title, 'No authorized subject headings' as issue
   FROM biblio.record_entry b
   INNER JOIN asset.call_number cn ON cn.record=b.id
@@ -141,6 +143,56 @@ SELECT DISTINCT b.id as tcn, ou.name as library, cn.label as call_number, c.barc
   AND cn.label NOT LIKE 'ILL%'
   AND b.id != -1
   ORDER BY library;
+  */
+  SELECT COUNT( DISTINCT b.id) AS number_of_records_without_subject_headings
+  FROM biblio.record_entry b
+  INNER JOIN asset.call_number cn ON cn.record=b.id
+  INNER JOIN asset.copy c ON c.call_number=cn.id
+  INNER JOIN actor.org_unit ou on ou.id=c.circ_lib
+  WHERE b.deleted=FALSE
+  AND b.marc NOT LIKE '%tag="600%'
+  AND b.marc NOT LIKE '%tag="610%'
+  AND b.marc NOT LIKE '%tag="611%'
+  AND b.marc NOT LIKE '%tag="630%'
+  AND b.marc NOT LIKE '%tag="650%'
+  AND b.marc NOT LIKE '%tag="651%'
+  AND c.location !=238 -- LBCC ILL
+  AND c.location !=171 -- Main's FIX
+  AND c.location !=177 -- Carnegie's FIX
+  AND c.location !=192 -- Lebanon's FIX
+  AND c.location !=237 -- LBCC's Servc-Desk
+  AND c.location !=229 -- LBCC's Reserves
+  AND c.location !=203 -- APL's On Order
+  AND c.location !=210 -- APL's On Order
+  AND c.location !=183 -- APL's Reserves
+  AND cn.label NOT LIKE 'ILL%'
+  AND b.id != -1;
+
+  SELECT DISTINCT b.id as tcn, ou.name as library, cn.label as call_number, c.barcode, xpath('//m:datafield[@tag="245"]/m:subfield[@code="a"]/text()', b.marc::xml, ARRAY[ARRAY['m','http://www.loc.gov/MARC21/slim']])::VARCHAR as title, 'No authorized subject headings' as issue
+  FROM biblio.record_entry b
+  INNER JOIN asset.call_number cn ON cn.record=b.id
+  INNER JOIN asset.copy c ON c.call_number=cn.id
+  INNER JOIN actor.org_unit ou on ou.id=c.circ_lib
+  WHERE b.deleted=FALSE
+  AND b.marc NOT LIKE '%tag="600%'
+  AND b.marc NOT LIKE '%tag="610%'
+  AND b.marc NOT LIKE '%tag="611%'
+  AND b.marc NOT LIKE '%tag="630%'
+  AND b.marc NOT LIKE '%tag="650%'
+  AND b.marc NOT LIKE '%tag="651%'
+  AND c.location !=238 -- LBCC ILL
+  AND c.location !=171 -- Main's FIX
+  AND c.location !=177 -- Carnegie's FIX
+  AND c.location !=192 -- Lebanon's FIX
+  AND c.location !=237 -- LBCC's Servc-Desk
+  AND c.location !=229 -- LBCC's Reserves
+  AND c.location !=203 -- APL's On Order
+  AND c.location !=210 -- APL's On Order
+  AND c.location !=183 -- APL's Reserves
+  AND cn.label NOT LIKE 'ILL%'
+  AND b.id != -1 AND (c.circ_lib = 7 OR c.circ_lib=4 OR c.circ_lib=5)
+  ORDER BY tcn DESC LIMIT 40;
+  
   \o
 EOF
 

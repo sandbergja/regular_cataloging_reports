@@ -75,6 +75,15 @@ SELECT value AS new_authority_headings
   AND tag LIKE '1%' -- only authoritized headings
   AND create_date > (current_date - interval '1 month'); -- just in the past month
 
+---monthly: empty volumes that are the last volume attached to a bib record
+ SELECT org_unit.name AS library, record AS tcn, 'Has an empty volume' AS issue
+  FROM asset.call_number, actor.org_unit
+  WHERE NOT deleted AND edit_date<(now() - interval '2 months')
+  AND call_number.id NOT IN (SELECT call_number FROM asset.copy WHERE NOT deleted)
+  AND record IN (SELECT record FROM asset.call_number WHERE NOT deleted GROUP BY record HAVING COUNT(*) < 2)
+  AND owning_lib=org_unit.id AND ou_type=3
+  ORDER BY library, tcn;
+
 \o
 EOF
 

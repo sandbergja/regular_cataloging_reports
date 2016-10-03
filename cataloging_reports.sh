@@ -1,12 +1,11 @@
 #!/bin/bash
 
-dbname="db" #change this to appropriate value
-hostname="host" #change this to appropriate value
-username="user" #change this to appropriate value
-email="sandbej at linnbenton dot edu" #change this to appropriate value; you can separate multiple email addresses with commas
+dbname="myDB" #change this to appropriate value
+hostname="myHOST" #change this to appropriate value
+username="mySELF" #change this to appropriate value
+email="myEmail@myDomain" #change this to appropriate value; you can separate multiple email addresses with commas
 this_month=`date +%m`
 log_file="cataloging_reports.tmp"
-
 
 psql $dbname -h $hostname -U $username << EOF
 \o cataloging_reports.tmp
@@ -66,6 +65,16 @@ SELECT ou.name as library, b.id as tcn, cn.label as call_number, c.barcode, xpat
   AND b.id != -1
   AND c.location = 1
   ORDER BY library;
+
+---monthly: new local authority records
+SELECT value AS new_authority_headings
+  FROM authority.simple_heading, authority.control_set_authority_field, authority.record_entry
+  WHERE thesaurus = 'L' -- local authorities
+  AND simple_heading.atag=control_set_authority_field.id
+  AND simple_heading.record = record_entry.id
+  AND tag LIKE '1%' -- only authoritized headings
+  AND create_date > (current_date - interval '1 month'); -- just in the past month
+
 \o
 EOF
 
